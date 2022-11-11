@@ -40,7 +40,7 @@ class QPController(Controller):
             P = zeros((self.m, self.m))
         if q is None:
             q = zeros(self.m)
-        cost = quad_form(self.u, P) + q * self.u + r
+        cost = quad_form(self.u, P) + q @ self.u + r
         self.static_costs.append(cost)
 
     def add_dynamic_cost(self, P, q, r):
@@ -58,7 +58,7 @@ class QPController(Controller):
             q = lambda x, t: zeros(self.m)
         if r is None:
             r = lambda x, t: 0
-        cost = lambda x, t: quad_form(self.u, P(x, t)) + q(x, t) * self.u + r(x, t)
+        cost = lambda x, t: quad_form(self.u, P(x, t)) + q(x, t) @ self.u + r(x, t)
         self.dynamic_costs.append(cost)
 
     def add_regularizer(self, controller, coeff=1):
@@ -88,9 +88,9 @@ class QPController(Controller):
             delta = Variable()
             self.variables.append(delta)
             self.static_costs.append(coeff * square(delta))
-            constraint = lambda x, t: aff_lyap.drift(x, t) + aff_lyap.act(x, t) * self.u <= -comp(aff_lyap.eval(x, t)) + delta
+            constraint = lambda x, t: aff_lyap.drift(x, t) + aff_lyap.act(x, t) @ self.u <= -comp(aff_lyap.eval(x, t)) + delta
         else:
-            constraint = lambda x, t: aff_lyap.drift(x, t) + aff_lyap.act(x, t) * self.u <= -comp(aff_lyap.eval(x, t))
+            constraint = lambda x, t: aff_lyap.drift(x, t) + aff_lyap.act(x, t) @ self.u <= -comp(aff_lyap.eval(x, t))
         self.constraints.append(constraint)
 
     def add_safety_constraint(self, aff_safety, comp=None, slacked=False, coeff=0):
@@ -109,9 +109,9 @@ class QPController(Controller):
             delta = Variable()
             self.variables.append(delta)
             self.static_costs.append(coeff * square(delta))
-            constraint = lambda x, t: aff_safety.drift(x, t) + aff_safety.act(x, t) * self.u >= -comp(aff_safety.eval(x, t)) - delta
+            constraint = lambda x, t: aff_safety.drift(x, t) + aff_safety.act(x, t) @ self.u >= -comp(aff_safety.eval(x, t)) - delta
         else:
-            constraint = lambda x, t: aff_safety.drift(x, t) + aff_safety.act(x, t) * self.u >= -comp(aff_safety.eval(x, t))
+            constraint = lambda x, t: aff_safety.drift(x, t) + aff_safety.act(x, t) @ self.u >= -comp(aff_safety.eval(x, t))
         self.constraints.append(constraint)
     @staticmethod
     def build_care(aff_dynamics, Q, R):
