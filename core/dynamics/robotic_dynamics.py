@@ -130,7 +130,7 @@ class RoboticDynamics(SystemDynamics, AffineDynamics, PDDynamics):
     def drift_impl(self, x, t):
         q, q_dot = x.view(2, -1)
         soln = lstsq(self.H(q, q_dot).unsqueeze(1), self.D(q)).solution
-        soln = soln.squeeze(1)
+        soln = soln.squeeze(0)
         return cat([q_dot, -soln])
 
     def act_impl(self, x, t):
